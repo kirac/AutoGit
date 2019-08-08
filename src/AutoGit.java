@@ -17,16 +17,24 @@ public class AutoGit  extends JFrame implements ActionListener {
     private  JTextField mBranchText;
     private  JTextField mCherryPickIdText;
 
+    private String saveDataName="branch.data";
     public AutoGit() {
         mBranchPanel = new JPanel();
         mCherryPickIdPanel = new JPanel();
         mSummitPanel = new JPanel();
+
 
         mBranchLabel = new JLabel("添加的分支名[,]");
         mCherryPickIdLabel = new JLabel("Cherry-Pick-Id");
 
         mSummitBtn = new JButton("添加");
         mBranchText = new JTextField(20);
+        try {
+            String branchName = readBranchName();
+            mBranchText.setText(branchName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         mCherryPickIdText = new JTextField(20);
         this.setLayout(new GridLayout(3, 1));
 
@@ -50,6 +58,7 @@ public class AutoGit  extends JFrame implements ActionListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
 
+
         mSummitBtn.addActionListener(this);
     }
     public static void main(String[] args) {
@@ -58,6 +67,11 @@ public class AutoGit  extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        try {
+            savePersons(mBranchText.getText());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
         if ("".equals(mCherryPickIdText.getText()) || "".equals(mBranchText.getText()))
         {
             JOptionPane.showMessageDialog(null,"请输入分支名称和CherryPickId！！！","消息",JOptionPane.WARNING_MESSAGE);
@@ -78,6 +92,26 @@ public class AutoGit  extends JFrame implements ActionListener {
                     ,new File(filePath),"UTF-8");
         }
     }
+    private  void savePersons(String branchNames) throws IOException {
+
+        // 保存文件内容
+        FileWriter writer = new FileWriter(saveDataName);
+        writer.write(branchNames);
+        writer.close();
+        System.out.println("对象保存完毕。");
+    }
+    // 从文件中读取 Person 对象
+    private  String readBranchName() throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(saveDataName));
+        String line;
+        StringBuilder stringBuilder=new StringBuilder();
+        while ((line = reader.readLine()) != null) {
+            stringBuilder.append(line);
+        }
+
+        return stringBuilder.toString();
+    }
+
     public String getFilePath()
     {
         JFileChooser fc = new JFileChooser();
