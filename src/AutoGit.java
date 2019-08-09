@@ -4,20 +4,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 
-public class AutoGit  extends JFrame implements ActionListener {
-    private  JPanel mBranchPanel;
-    private  JPanel mCherryPickIdPanel;
-    private  JPanel mSummitPanel;
+public class AutoGit extends JFrame implements ActionListener {
+    private JPanel mBranchPanel;
+    private JPanel mCherryPickIdPanel;
+    private JPanel mSummitPanel;
 
-    private  JLabel mBranchLabel;
-    private  JLabel mCherryPickIdLabel;
+    private JLabel mBranchLabel;
+    private JLabel mCherryPickIdLabel;
 
-    private  JButton mSummitBtn;
+    private JButton mSummitBtn;
 
-    private  JTextField mBranchText;
-    private  JTextField mCherryPickIdText;
+    private JTextField mBranchText;
+    private JTextField mCherryPickIdText;
 
-    private String saveDataName="branch.data";
+    private String saveDataName = "branch.data";
+    private String savePathName = "path.data";
+
     public AutoGit() {
         mBranchPanel = new JPanel();
         mCherryPickIdPanel = new JPanel();
@@ -30,7 +32,7 @@ public class AutoGit  extends JFrame implements ActionListener {
         mSummitBtn = new JButton("添加");
         mBranchText = new JTextField(20);
         try {
-            String branchName = readBranchName();
+            String branchName = readData(saveDataName);
             mBranchText.setText(branchName);
         } catch (IOException e) {
             e.printStackTrace();
@@ -61,50 +63,53 @@ public class AutoGit  extends JFrame implements ActionListener {
 
         mSummitBtn.addActionListener(this);
     }
+
     public static void main(String[] args) {
         new AutoGit();
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        try {
-            savePersons(mBranchText.getText());
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        if ("".equals(mCherryPickIdText.getText()) || "".equals(mBranchText.getText()))
-        {
-            JOptionPane.showMessageDialog(null,"请输入分支名称和CherryPickId！！！","消息",JOptionPane.WARNING_MESSAGE);
+
+        savePersons(mBranchText.getText(), saveDataName);
+        if ("".equals(mCherryPickIdText.getText()) || "".equals(mBranchText.getText())) {
+            JOptionPane.showMessageDialog(null, "请输入分支名称和CherryPickId！！！", "消息", JOptionPane.WARNING_MESSAGE);
             return;
         }
         System.out.println(mCherryPickIdText.getText());
         String filePath = getFilePath();
+        savePersons(filePath, savePathName);
         //获取完路径后，先切割分支名称
         String branchText = mBranchText.getText();
-       String cherryPickId= mCherryPickIdText.getText();
+        String cherryPickId = mCherryPickIdText.getText();
         String[] branchArray = branchText.split(",");
         for (String branchName : branchArray) {
-            writeTxtFile("\n"+"git checkout "+branchName+"\n"
-                    +"git pull"+"\n"
-                    +"git cherry-pick "+cherryPickId+"\n"
-                    +"git commit"+"\n"
-                    +"git push"+"\n"
-                    ,new File(filePath),"UTF-8");
+            writeTxtFile("\n" + "git checkout " + branchName + "\n"
+                            + "git pull" + "\n"
+                            + "git cherry-pick " + cherryPickId + "\n"
+                            + "git commit" + "\n"
+                            + "git push" + "\n"
+                    , new File(filePath), "UTF-8");
         }
     }
-    private  void savePersons(String branchNames) throws IOException {
 
+    private void savePersons(String data, String saveDataName) {
         // 保存文件内容
-        FileWriter writer = new FileWriter(saveDataName);
-        writer.write(branchNames);
-        writer.close();
-        System.out.println("对象保存完毕。");
+        try {
+            FileWriter writer = new FileWriter(saveDataName);
+            writer.write(data);
+            writer.close();
+            System.out.println("对象保存完毕。");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-    // 从文件中读取 Person 对象
-    private  String readBranchName() throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(saveDataName));
+
+    // 从文件中读取分支名称
+    private String readData(String name) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(name));
         String line;
-        StringBuilder stringBuilder=new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         while ((line = reader.readLine()) != null) {
             stringBuilder.append(line);
         }
@@ -112,33 +117,41 @@ public class AutoGit  extends JFrame implements ActionListener {
         return stringBuilder.toString();
     }
 
-    public String getFilePath()
-    {
+    public String getFilePath() {
+
         JFileChooser fc = new JFileChooser();
         fc.setDialogType(JFileChooser.FILES_ONLY);
         fc.setDialogTitle("选择文件");
         fc.setMultiSelectionEnabled(false);
+        try {
+            String filePath = readData(savePathName);
+            if (!"".equals(filePath)) {
+                fc.setSelectedFile(new File(filePath));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         fc.showSaveDialog(fc);
-        if (fc.getSelectedFile()==null) {
+        if (fc.getSelectedFile() == null) {
             return null;
         }
         return fc.getSelectedFile().getPath();
     }
 
-    public  boolean writeTxtFile(String content, File fileName, String encoding) {
+    public boolean writeTxtFile(String content, File fileName, String encoding) {
 
         FileOutputStream fos = null;
-        boolean result=false;
+        boolean result = false;
         try {
-            if(!fileName.exists()){
+            if (!fileName.exists()) {
                 fileName.createNewFile();//如果文件不存在，就创建该文件
                 fos = new FileOutputStream(fileName);//首次写入获取
-            }else{
+            } else {
                 //如果文件已存在，那么就在文件末尾追加写入
-                fos = new FileOutputStream(fileName,true);//这里构造方法多了一个参数true,表示在文件末尾追加写入
+                fos = new FileOutputStream(fileName, true);//这里构造方法多了一个参数true,表示在文件末尾追加写入
             }
             fos.write(content.getBytes(encoding));
-            result=true;
+            result = true;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
